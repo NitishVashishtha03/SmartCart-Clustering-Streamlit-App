@@ -1,6 +1,6 @@
-# =====================================
-# SmartCart Customer Clustering App
-# =====================================
+# ==========================================
+# SmartCart Customer Clustering Streamlit App
+# ==========================================
 
 import streamlit as st
 import pandas as pd
@@ -15,12 +15,12 @@ st.set_page_config(page_title="SmartCart Clustering", layout="wide")
 
 st.title("🛒 SmartCart Customer Clustering System")
 
-# =====================================
-# 1️⃣ LOAD DATA
-# =====================================
+# ==========================================
+# 1️⃣ LOAD DATA (⚠️ CHECK DATASET NAME HERE)
+# ==========================================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("smartcard_customers.csv")
+    df = pd.read_csv("smartcart_customers.csv")  # 👈 CHANGE NAME IF DIFFERENT
     return df
 
 df = load_data()
@@ -28,85 +28,95 @@ df = load_data()
 st.subheader("Dataset Preview")
 st.dataframe(df.head())
 
-# =====================================
+# ==========================================
 # 2️⃣ DATA CLEANING
-# =====================================
-df["Income"] = df["Income"].fillna(df["Income"].median())
+# ==========================================
+if "Income" in df.columns:
+    df["Income"] = df["Income"].fillna(df["Income"].median())
 
+# Features used for clustering
 features = [
     'Income','MntWines','MntFruits','MntMeatProducts',
     'MntFishProducts','MntSweetProducts','MntGoldProds',
     'NumWebPurchases','NumStorePurchases','Recency'
 ]
 
+# Keep only available features
+features = [f for f in features if f in df.columns]
+
 df_model = df[features].copy()
 df_model = df_model.fillna(df_model.median())
 
-# =====================================
-# 3️⃣ SCALING
-# =====================================
+# ==========================================
+# 3️⃣ SCALE DATA
+# ==========================================
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df_model)
 
-# =====================================
-# 4️⃣ TRAIN MODEL
-# =====================================
-kmeans = KMeans(n_clusters=4, random_state=42)
+# ==========================================
+# 4️⃣ TRAIN KMEANS MODEL
+# ==========================================
+kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
 kmeans.fit(X_scaled)
 
 df_model["Cluster"] = kmeans.labels_
 
-# =====================================
-# 5️⃣ VISUALIZATION
-# =====================================
+# ==========================================
+# 5️⃣ VISUALIZATION (NO 3D ERROR)
+# ==========================================
 st.subheader("Customer Count per Cluster")
 
 fig1, ax1 = plt.subplots()
-sns.countplot(data=df_model, x="Cluster", hue="Cluster", ax=ax1)
+sns.countplot(data=df_model, x="Cluster", ax=ax1)
 st.pyplot(fig1)
 
-st.subheader("Income vs Spending")
+st.subheader("Income vs Recency by Cluster")
 
-fig2, ax2 = plt.subplots()
-sns.scatterplot(data=df_model, x="Income", y="Recency", hue="Cluster", ax=ax2)
-st.pyplot(fig2)
+if "Income" in df_model.columns and "Recency" in df_model.columns:
+    fig2, ax2 = plt.subplots()
+    sns.scatterplot(
+        data=df_model,
+        x="Income",
+        y="Recency",
+        hue="Cluster",
+        ax=ax2
+    )
+    st.pyplot(fig2)
 
-# =====================================
-# 6️⃣ USER INPUT
-# =====================================
+# ==========================================
+# 6️⃣ USER INPUT SECTION
+# ==========================================
 st.subheader("👉 Enter Customer Details")
 
-income = st.number_input("Income", 0)
-wine = st.number_input("Wine Spending", 0)
-fruit = st.number_input("Fruit Spending", 0)
-meat = st.number_input("Meat Spending", 0)
-fish = st.number_input("Fish Spending", 0)
-sweet = st.number_input("Sweet Spending", 0)
-gold = st.number_input("Gold Spending", 0)
-web = st.number_input("Web Purchases", 0)
-store = st.number_input("Store Purchases", 0)
-recency = st.number_input("Days Since Last Purchase", 0)
+user_inputs = []
 
+for feature in features:
+    value = st.number_input(f"{feature}", 0)
+    user_inputs.append(value)
+
+# ==========================================
+# 7️⃣ PREDICTION
+# ==========================================
 if st.button("Predict Customer Cluster"):
 
-    user_data = np.array([[income,wine,fruit,meat,fish,sweet,gold,web,store,recency]])
-    user_scaled = scaler.transform(user_data)
+    user_array = np.array([user_inputs])
+    user_scaled = scaler.transform(user_array)
     cluster = kmeans.predict(user_scaled)
 
     st.success(f"Customer belongs to Cluster: {cluster[0]}")
 
     if cluster[0] == 0:
-        st.info("💡 Low spending customer")
+        st.info("💡 Budget / Low Spending Customer")
     elif cluster[0] == 1:
-        st.info("💡 Medium spending customer")
+        st.info("💡 Moderate Spending Customer")
     elif cluster[0] == 2:
-        st.info("💡 High value loyal customer")
+        st.info("💡 High Value Loyal Customer")
     else:
-        st.info("💡 New or irregular customer")
+        st.info("💡 Occasional / New Customer")
 
-# =====================================
-# 7️⃣ CLUSTER SUMMARY
-# =====================================
-st.subheader("Cluster Summary")
+# ==========================================
+# 8️⃣ CLUSTER SUMMARY
+# ==========================================
+st.subheader("Cluster Summary (Average Values)")
 summary = df_model.groupby("Cluster").mean()
 st.dataframe(summary)
