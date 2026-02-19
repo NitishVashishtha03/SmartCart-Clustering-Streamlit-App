@@ -38,6 +38,11 @@ features = [
 X = df[features]
 
 # ================================
+# FIX MISSING VALUES  🔥 IMPORTANT
+# ================================
+X = X.fillna(X.median())
+
+# ================================
 # SCALE DATA
 # ================================
 scaler = StandardScaler()
@@ -54,15 +59,14 @@ kmeans.fit(X_scaled)
 # ================================
 st.subheader("Cluster Distribution")
 
-labels = kmeans.labels_
-df["Cluster"] = labels
+df["Cluster"] = kmeans.labels_
 
 fig, ax = plt.subplots()
 sns.countplot(x=df["Cluster"], ax=ax)
 st.pyplot(fig)
 
 # ================================
-# USER INPUT SECTION
+# USER INPUT
 # ================================
 st.subheader("👉 Enter Customer Details")
 
@@ -78,7 +82,7 @@ store = st.number_input("Store Purchases", 0)
 recency = st.number_input("Days Since Last Purchase", 0)
 
 # ================================
-# PREDICTION
+# PREDICT
 # ================================
 if st.button("Predict Customer Cluster"):
 
@@ -89,7 +93,7 @@ if st.button("Predict Customer Cluster"):
     st.success(f"✅ Customer belongs to Cluster: {cluster[0]}")
 
 # ================================
-# SHOW SAMPLE DATA
+# SHOW DATA
 # ================================
 if st.checkbox("Show Dataset"):
     st.dataframe(df.head())
