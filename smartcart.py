@@ -271,3 +271,55 @@ sns.scatterplot(x=X["Total_Spending"], y=X["Income"], hue=X["cluster"], palette=
 
 cluster_summary = X.groupby("cluster").mean()
 print(cluster_summary)
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+st.title("🛒 SmartCart Customer Clustering System")
+
+# -----------------------------
+# Load dataset
+# -----------------------------
+df = pd.read_csv("marketing_campaign.csv")
+
+# Select important features
+features = [
+    'Income','MntWines','MntFruits','MntMeatProducts',
+    'MntFishProducts','MntSweetProducts','MntGoldProds',
+    'NumWebPurchases','NumStorePurchases','Recency'
+]
+
+X = df[features]
+
+# Scale
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Train model
+kmeans = KMeans(n_clusters=4, random_state=42)
+kmeans.fit(X_scaled)
+
+st.subheader("👉 Enter Customer Details")
+
+income = st.number_input("Income", 0)
+wine = st.number_input("Wine Spending", 0)
+fruit = st.number_input("Fruit Spending", 0)
+meat = st.number_input("Meat Spending", 0)
+fish = st.number_input("Fish Spending", 0)
+sweet = st.number_input("Sweet Spending", 0)
+gold = st.number_input("Gold Spending", 0)
+web = st.number_input("Web Purchases", 0)
+store = st.number_input("Store Purchases", 0)
+recency = st.number_input("Days Since Last Purchase", 0)
+
+if st.button("Predict Customer Cluster"):
+
+    user_data = np.array([[income,wine,fruit,meat,fish,sweet,gold,web,store,recency]])
+    user_scaled = scaler.transform(user_data)
+
+    cluster = kmeans.predict(user_scaled)
+
+    st.success(f"Customer belongs to Cluster: {cluster[0]}")
