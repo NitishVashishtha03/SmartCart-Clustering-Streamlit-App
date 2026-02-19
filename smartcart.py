@@ -20,7 +20,7 @@ st.title("🛒 SmartCart Customer Clustering System")
 # =====================================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("marketing_campaign.csv")
+    df = pd.read_csv("smartcard_customers.csv")
     return df
 
 df = load_data()
